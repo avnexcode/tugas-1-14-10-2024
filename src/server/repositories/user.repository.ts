@@ -1,4 +1,6 @@
-const data = [
+import type { Filters, User } from "@/types";
+
+const data: User[] = [
     {
         id: 1,
         name: 'John Doe',
@@ -39,18 +41,10 @@ const data = [
     },
 ];
 
-export const findMany = async () => {
-    return data;
-};
-
-export const findByName = async (name: string) => {
-    return data.filter(person => person.name.toLowerCase() === name.toLowerCase());
-};
-
-export const findByCity = async (city: string) => {
-    return data.filter(person => person.city.toLowerCase() === city.toLowerCase());
-};
-
-export const findByAge = async (minAge: number) => {
-    return data.filter(person => person.age >= minAge);
+export const findMany = async (filters: Filters): Promise<User[]> => {
+    return data.filter(user =>
+        (!filters.name || user.name.toLowerCase().includes(filters.name.toLowerCase())) &&
+        (!filters.city || user.city.toLowerCase().includes(filters.city.toLowerCase())) &&
+        (!filters.age || user.age >= filters.age)
+    );
 };

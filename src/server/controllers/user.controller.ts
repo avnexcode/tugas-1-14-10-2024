@@ -1,24 +1,44 @@
-import { NextRequest, NextResponse } from "next/server"
-import * as Service from '../services/user.service'
+import { NextRequest, NextResponse } from "next/server";
+import * as Service from '../services/user.service';
+
 export const GET = async (req: NextRequest) => {
-    console.log(req)
     try {
-        const data = await Service.getAll()
+        const url = new URL(req.url);
+        const name = url.searchParams.get('name') || '';
+        const city = url.searchParams.get('city') || '';
+        const ageParam = url.searchParams.get('age');
+
+        let age: number | undefined;
+        if (ageParam !== null) {
+            age = parseInt(ageParam, 10);
+            if (isNaN(age) || age < 1) {
+                return NextResponse.json({
+                    status: false,
+                    statusCode: 400,
+                    message: 'Invalid age parameter. Age must be a positive integer.',
+                }, { status: 400 });
+            }
+        }
+
+        const filters = { name, city, age };
+        const data = await Service.getAll(filters);
+
         return NextResponse.json({
             status: true,
             statusCode: 200,
-            message: 'Success retrieved all data',
+            message: 'Successfully retrieved all data',
             data
-        })
+        });
     } catch (error) {
-        const statusCode = error instanceof Error && error.message === 'Invalid page or limit parameter' ? 400 : 500;
-
+        console.error('Error in GET request:', error);
+        
+        const isProduction = process.env.NEXT_PUBLIC_ENV === 'production';
+        
         return NextResponse.json({
             status: false,
-            statusCode,
-            message: error instanceof Error ? error.message : 'Unknown error occurred',
-            stack: process.env.NEXT_PUBLIC_ENV === 'production' ? '🥞' : error instanceof Error ? error.stack : 'No stack trace available',
-        }, { status: statusCode });
+            statusCode: 500,
+            message: 'An unexpected error occurred',
+            ...(isProduction ? {} : { detail: error instanceof Error ? error.message : 'Unknown error' }),
+        }, { status: 500 });
     }
-
-}
+};
